@@ -1,0 +1,835 @@
+```html
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive Monty Hall Problem simulator">
+<title>Monty Hall Simulator</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --bg: #0b1020;
+        --card: rgba(20, 28, 52, 0.78);
+        --card-border: rgba(255,255,255,0.08);
+        --text: #f5f7ff;
+        --muted: #9ba6c2;
+        --accent: #7c5cff;
+        --accent-light: #9b84ff;
+        --green: #32d583;
+        --red: #ff5c7a;
+        --gold: #ffc857;
+        --door: #252f4f;
+        --door-hover: #303b61;
+    }
+
+    body {
+        min-height: 100vh;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+                     BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+            radial-gradient(circle at 20% 10%, rgba(124,92,255,.18), transparent 30%),
+            radial-gradient(circle at 80% 80%, rgba(50,213,131,.10), transparent 30%),
+            var(--bg);
+        padding: 30px 16px 60px;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    header {
+        text-align: center;
+        margin-bottom: 35px;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 7px 13px;
+        border: 1px solid rgba(124,92,255,.35);
+        border-radius: 999px;
+        color: var(--accent-light);
+        background: rgba(124,92,255,.08);
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    h1 {
+        font-size: clamp(32px, 6vw, 58px);
+        line-height: 1;
+        letter-spacing: -2px;
+        margin-bottom: 15px;
+    }
+
+    .subtitle {
+        color: var(--muted);
+        max-width: 650px;
+        margin: auto;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+
+    .game-card,
+    .stats-card,
+    .info-card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 24px;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+
+    .game-card {
+        padding: 28px;
+        margin-bottom: 22px;
+    }
+
+    .game-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+    }
+
+    .game-status {
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    .step {
+        color: var(--accent-light);
+        font-weight: 700;
+    }
+
+    .doors {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        max-width: 850px;
+        margin: 0 auto 28px;
+    }
+
+    .door {
+        position: relative;
+        min-height: 230px;
+        border: 2px solid transparent;
+        border-radius: 20px;
+        background: var(--door);
+        cursor: pointer;
+        transition: .25s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .door:hover:not(.disabled) {
+        transform: translateY(-5px);
+        background: var(--door-hover);
+        border-color: rgba(124,92,255,.5);
+    }
+
+    .door.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 30px rgba(124,92,255,.25);
+    }
+
+    .door.open {
+        border-color: var(--red);
+        background: rgba(255,92,122,.08);
+    }
+
+    .door.win {
+        border-color: var(--green);
+        background: rgba(50,213,131,.08);
+    }
+
+    .door.disabled {
+        cursor: default;
+    }
+
+    .door-number {
+        position: absolute;
+        top: 12px;
+        left: 15px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .door-icon {
+        font-size: 70px;
+        margin-bottom: 12px;
+        transition: transform .4s ease;
+    }
+
+    .door.open .door-icon {
+        transform: scale(1.1);
+    }
+
+    .door-label {
+        font-weight: 700;
+        font-size: 17px;
+    }
+
+    .door-result {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .message {
+        text-align: center;
+        min-height: 52px;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-bottom: 18px;
+    }
+
+    .message strong {
+        color: var(--text);
+    }
+
+    .actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    button {
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 700;
+        color: white;
+        background: #303a5c;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.12);
+    }
+
+    button.primary {
+        background: var(--accent);
+    }
+
+    button.green {
+        background: #208e5c;
+    }
+
+    button.red {
+        background: #a93650;
+    }
+
+    button:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .stat {
+        padding: 20px;
+        background: rgba(255,255,255,.035);
+        border-radius: 17px;
+        border: 1px solid rgba(255,255,255,.05);
+    }
+
+    .stat-label {
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    .win {
+        color: var(--green);
+    }
+
+    .loss {
+        color: var(--red);
+    }
+
+    .simulation {
+        padding: 24px;
+        border-radius: 18px;
+        background: rgba(255,255,255,.025);
+        margin-top: 10px;
+    }
+
+    .simulation-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 18px;
+        align-items: center;
+    }
+
+    .simulation-title h3 {
+        font-size: 17px;
+    }
+
+    .simulation-title span {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .bar-row {
+        margin-bottom: 18px;
+    }
+
+    .bar-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 7px;
+        font-size: 14px;
+    }
+
+    .bar-info span:last-child {
+        font-weight: 800;
+    }
+
+    .bar {
+        height: 10px;
+        background: rgba(255,255,255,.07);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        transition: width .8s ease;
+    }
+
+    .bar-fill.switch {
+        background: var(--green);
+    }
+
+    .bar-fill.stay {
+        background: var(--red);
+    }
+
+    .controls {
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .info-card {
+        padding: 25px;
+    }
+
+    .info-card h2 {
+        margin-bottom: 12px;
+        font-size: 22px;
+    }
+
+    .info-card p {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 12px;
+    }
+
+    .formula {
+        margin-top: 18px;
+        padding: 18px;
+        border-radius: 15px;
+        background: rgba(124,92,255,.08);
+        border: 1px solid rgba(124,92,255,.16);
+        text-align: center;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .footer {
+        text-align: center;
+        color: #68728c;
+        margin-top: 28px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 750px) {
+        .doors {
+            grid-template-columns: 1fr;
+            max-width: 380px;
+        }
+
+        .door {
+            min-height: 170px;
+        }
+
+        .door-icon {
+            font-size: 55px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .game-card,
+        .stats-card,
+        .info-card {
+            border-radius: 18px;
+            padding: 18px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+    <div class="badge">Probability experiment</div>
+    <h1>Monty Hall</h1>
+    <p class="subtitle">
+        Выбери дверь, посмотри, как ведущий открывает самокат,
+        и проверь экспериментом, действительно ли выгодно менять выбор.
+    </p>
+</header>
+
+<section class="game-card">
+
+    <div class="game-header">
+        <div>
+            <div class="step" id="stepText">Шаг 1 из 3</div>
+            <div class="game-status" id="statusText">
+                Выбери одну из трёх дверей
+            </div>
+        </div>
+
+        <button onclick="newGame()">Новая игра</button>
+    </div>
+
+    <div class="doors" id="doors"></div>
+
+    <div class="message" id="message">
+        За одной дверью 🚗 машина, за двумя — 🛴 самокаты.
+        <br>Сначала сделай свой выбор.
+    </div>
+
+    <div class="actions" id="actions"></div>
+
+</section>
+
+
+<section class="stats-card game-card">
+
+    <div class="stats-grid">
+
+        <div class="stat">
+            <div class="stat-label">Игр сыграно</div>
+            <div class="stat-value" id="totalGames">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Победы</div>
+            <div class="stat-value win" id="wins">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Поражения</div>
+            <div class="stat-value loss" id="losses">0</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-label">Процент побед</div>
+            <div class="stat-value" id="winRate">0%</div>
+        </div>
+
+    </div>
+
+    <div class="simulation">
+
+        <div class="simulation-title">
+            <h3>Симуляция стратегий</h3>
+            <span id="simulationStatus">Готово к запуску</span>
+        </div>
+
+        <div class="bar-row">
+            <div class="bar-info">
+                <span>🔄 Всегда менять</span>
+                <span id="switchPercent">0%</span>
+            </div>
+            <div class="bar">
+                <div class="bar-fill switch" id="switchBar"></div>
+            </div>
+        </div>
+
+        <div class="bar-row">
+            <div class="bar-info">
+                <span>🛑 Никогда не менять</span>
+                <span id="stayPercent">0%</span>
+            </div>
+            <div class="bar">
+                <div class="bar-fill stay" id="stayBar"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="simulate(10)">10 игр</button>
+            <button onclick="simulate(100)">100 игр</button>
+            <button onclick="simulate(1000)">1 000 игр</button>
+            <button onclick="simulate(10000)">10 000 игр</button>
+            <button class="primary" onclick="simulate(100000)">100 000 игр</button>
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="info-card">
+
+    <h2>Почему работает смена выбора?</h2>
+
+    <p>
+        В начале вероятность выбрать машину составляет всего
+        <strong>1/3</strong>.
+        Вероятность того, что машина находится за одной из двух других
+        дверей, составляет <strong>2/3</strong>.
+    </p>
+
+    <p>
+        Ведущий знает, где машина, поэтому он всегда открывает дверь
+        с самокатом. Он не выбирает случайную дверь.
+    </p>
+
+    <p>
+        Если твой первоначальный выбор был неправильным — а это происходит
+        в <strong>2/3 случаев</strong> — смена выбора приводит тебя прямо
+        к машине.
+    </p>
+
+    <div class="formula">
+        Не менять → 1/3 ≈ 33,3% &nbsp;&nbsp;|&nbsp;&nbsp;
+        Менять → 2/3 ≈ 66,7%
+    </div>
+
+</section>
+
+<div class="footer">
+    Monty Hall Simulator · Pure HTML / CSS / JavaScript
+</div>
+
+</div>
+
+
+<script>
+
+let carDoor;
+let selectedDoor = null;
+let openedDoor = null;
+let stage = 1;
+
+let totalGames = 0;
+let wins = 0;
+let losses = 0;
+
+
+/* =========================
+   GAME
+========================= */
+
+function randomDoor() {
+    return Math.floor(Math.random() * 3);
+}
+
+
+function newGame() {
+
+    carDoor = randomDoor();
+    selectedDoor = null;
+    openedDoor = null;
+    stage = 1;
+
+    renderDoors();
+
+    document.getElementById("stepText").textContent = "Шаг 1 из 3";
+    document.getElementById("statusText").textContent =
+        "Выбери одну из трёх дверей";
+
+    document.getElementById("message").innerHTML =
+        "За одной дверью 🚗 машина, за двумя — 🛴 самокаты." +
+        "<br>Сначала сделай свой выбор.";
+
+    document.getElementById("actions").innerHTML = "";
+}
+
+
+function renderDoors() {
+
+    const container = document.getElementById("doors");
+    container.innerHTML = "";
+
+    for (let i = 0; i < 3; i++) {
+
+        const door = document.createElement("div");
+
+        door.className = "door";
+
+        if (selectedDoor === i) {
+            door.classList.add("selected");
+        }
+
+        if (openedDoor === i) {
+            door.classList.add("open");
+        }
+
+        if (stage === 3 && carDoor === i) {
+            door.classList.add("win");
+        }
+
+        door.innerHTML = `
+            <div class="door-number">ДВЕРЬ ${i + 1}</div>
+            <div class="door-icon">
+                ${openedDoor === i || stage === 3
+                    ? (carDoor === i ? "🚗" : "🛴")
+                    : "🚪"}
+            </div>
+            <div class="door-label">
+                ${openedDoor === i
+                    ? "Открыто"
+                    : stage === 3
+                        ? (carDoor === i ? "Машина!" : "Самокат")
+                        : "Закрыто"}
+            </div>
+            <div class="door-result">
+                ${selectedDoor === i ? "Твой выбор" : ""}
+            </div>
+        `;
+
+        if (stage === 1) {
+            door.onclick = () => selectDoor(i);
+        }
+
+        if (stage === 2 && i !== selectedDoor && i !== openedDoor) {
+            door.onclick = () => switchDoor(i);
+        }
+
+        container.appendChild(door);
+    }
+}
+
+
+function selectDoor(door) {
+
+    selectedDoor = door;
+    stage = 2;
+
+    /*
+     * Ведущий выбирает дверь с самокатом.
+     * Он никогда не открывает выбранную игроком дверь
+     * и никогда не открывает машину.
+     */
+
+    const possibleDoors = [0, 1, 2].filter(
+        d => d !== selectedDoor && d !== carDoor
+    );
+
+    openedDoor =
+        possibleDoors[Math.floor(Math.random() * possibleDoors.length)];
+
+    document.getElementById("stepText").textContent = "Шаг 2 из 3";
+    document.getElementById("statusText").textContent =
+        "Ведущий открыл дверь с самокатом";
+
+    document.getElementById("message").innerHTML =
+        `Ты выбрал дверь <strong>${selectedDoor + 1}</strong>.<br>` +
+        `Ведущий открыл дверь <strong>${openedDoor + 1}</strong> — там 🛴. ` +
+        `Теперь можно оставить выбор или поменять его.`;
+
+    document.getElementById("actions").innerHTML = `
+        <button class="red" onclick="stay()">Оставить выбор</button>
+        <button class="green" onclick="switchDoor()">Поменять выбор</button>
+    `;
+
+    renderDoors();
+}
+
+
+function stay() {
+    finishGame(selectedDoor, false);
+}
+
+
+function switchDoor(door = null) {
+
+    if (door === null) {
+        door = [0,1,2].find(
+            d => d !== selectedDoor && d !== openedDoor
+        );
+    }
+
+    finishGame(door, true);
+}
+
+
+function finishGame(finalDoor, changed) {
+
+    stage = 3;
+
+    const won = finalDoor === carDoor;
+
+    totalGames++;
+
+    if (won) {
+        wins++;
+    } else {
+        losses++;
+    }
+
+    updateStats();
+
+    document.getElementById("stepText").textContent = "Шаг 3 из 3";
+
+    document.getElementById("statusText").textContent =
+        won ? "Ты выиграл!" : "Ты проиграл!";
+
+    document.getElementById("message").innerHTML =
+        changed
+            ? `Ты <strong>поменял выбор</strong>. ` +
+              (won
+                ? "И получил 🚗 машину!"
+                : "К сожалению, там оказался 🛴.")
+            : `Ты <strong>оставил выбор</strong>. ` +
+              (won
+                ? "И получил 🚗 машину!"
+                : "К сожалению, там оказался 🛴.");
+
+    document.getElementById("actions").innerHTML =
+        `<button class="primary" onclick="newGame()">Следующая игра</button>`;
+
+    renderDoors();
+}
+
+
+function updateStats() {
+
+    document.getElementById("totalGames").textContent = totalGames;
+    document.getElementById("wins").textContent = wins;
+    document.getElementById("losses").textContent = losses;
+
+    const rate =
+        totalGames === 0
+            ? 0
+            : wins / totalGames * 100;
+
+    document.getElementById("winRate").textContent =
+        rate.toFixed(1) + "%";
+}
+
+
+/* =========================
+   SIMULATION
+========================= */
+
+function runGame(changeStrategy) {
+
+    const car = randomDoor();
+    const firstChoice = randomDoor();
+
+    const possibleDoors = [0,1,2].filter(
+        d => d !== firstChoice && d !== car
+    );
+
+    const hostOpen =
+        possibleDoors[
+            Math.floor(Math.random() * possibleDoors.length)
+        ];
+
+    let finalChoice;
+
+    if (changeStrategy) {
+
+        finalChoice = [0,1,2].find(
+            d => d !== firstChoice && d !== hostOpen
+        );
+
+    } else {
+
+        finalChoice = firstChoice;
+    }
+
+    return finalChoice === car;
+}
+
+
+function simulate(numberOfGames) {
+
+    let switchWins = 0;
+    let stayWins = 0;
+
+    for (let i = 0; i < numberOfGames; i++) {
+
+        if (runGame(true)) {
+            switchWins++;
+        }
+
+        if (runGame(false)) {
+            stayWins++;
+        }
+    }
+
+    const switchPercent =
+        switchWins / numberOfGames * 100;
+
+    const stayPercent =
+        stayWins / numberOfGames * 100;
+
+    document.getElementById("switchPercent").textContent =
+        switchPercent.toFixed(2) + "%";
+
+    document.getElementById("stayPercent").textContent =
+        stayPercent.toFixed(2) + "%";
+
+    document.getElementById("switchBar").style.width =
+        switchPercent + "%";
+
+    document.getElementById("stayBar").style.width =
+        stayPercent + "%";
+
+    document.getElementById("simulationStatus").textContent =
+        `${numberOfGames.toLocaleString("ru-RU")} игр завершено`;
+}
+
+
+/* START */
+
+newGame();
+
+</script>
+
+</body>
+</html>
+```
